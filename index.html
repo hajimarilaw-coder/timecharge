@@ -120,14 +120,38 @@ tr:hover td { background: #fafaf8; }
   #pdf-frame { padding: 24px 20px; }
   .pdf-actions { margin: -24px -20px 16px; padding: 10px 20px; }
 }
+#login-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--bg); }
+#login-box { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:2.5rem 2rem; width:100%; max-width:360px; box-shadow:var(--shadow-md); text-align:center; }
+#login-box .login-title { font-family:'Noto Serif JP',serif; font-size:18px; font-weight:600; color:var(--accent); margin-bottom:4px; }
+#login-box .login-sub { font-size:12px; color:var(--text2); margin-bottom:1.5rem; }
+#login-error { color:var(--danger); font-size:12px; margin-top:8px; min-height:18px; }
+#app-screen { display:none; }
 </style>
 </head>
 <body>
+<div id="login-screen">
+  <div id="login-box">
+    <div style="font-size:28px;margin-bottom:8px">⚖</div>
+    <div class="login-title">タイムチャージ管理</div>
+    <div class="login-sub">事務所スタッフ専用システム</div>
+    <div style="text-align:left">
+      <label>メールアドレス</label>
+      <input type="email" id="login-email" placeholder="example@law.jp" onkeydown="if(event.key==='Enter')doLogin()">
+      <label>パスワード</label>
+      <input type="password" id="login-pass" placeholder="パスワード" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="doLogin()">ログイン</button>
+    <div id="login-error"></div>
+  </div>
+</div>
+<div id="app-screen">
 <div class="topbar">
   <div class="topbar-title">⚖ タイムチャージ管理</div>
   <div class="topbar-status">
     <div class="status-dot offline" id="status-dot"></div>
     <span id="status-text">接続中...</span>
+    <span id="login-user" style="margin-left:8px;opacity:0.8"></span>
+    <button onclick="doLogout()" style="margin-left:8px;padding:2px 10px;font-size:11px;border:1px solid rgba(255,255,255,0.4);border-radius:4px;background:transparent;color:#e8eef5;cursor:pointer">ログアウト</button>
   </div>
 </div>
 <nav>
@@ -238,6 +262,7 @@ tr:hover td { background: #fafaf8; }
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, getDocs, deleteDoc, query, orderBy, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCH-E9kVOVWrB57YZM30B1YeqmoptbtffM",
@@ -250,7 +275,45 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 let lawyers = [], cases = [], entries = [], settings = {};
+
+window.doLogin = async function() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  if (!email || !pass) { errEl.textContent = 'メールアドレスとパスワードを入力してください'; return; }
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch(e) {
+    const msgs = { 'auth/invalid-credential':'メールアドレスまたはパスワードが正しくありません', 'auth/user-not-found':'アカウントが見つかりません', 'auth/wrong-password':'パスワードが正しくありません', 'auth/too-many-requests':'試行回数が多すぎます。しばらくお待ちください' };
+    errEl.textContent = msgs[e.code] || 'ログインに失敗しました: ' + e.code;
+  }
+};
+
+window.doLogout = async function() {
+  if (!confirm('ログアウトしますか？')) return;
+  await signOut(auth);
+};
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display = 'block';
+    document.getElementById('login-user').textContent = user.email;
+    try {
+      await loadSettings(); await loadLawyers(); await loadCases(); await loadEntries();
+      setStatus(true);
+    } catch(e) {
+      setStatus(false);
+      console.error('Firebase error:', e);
+    }
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app-screen').style.display = 'none';
+  }
+});
 
 function setStatus(ok) {
   document.getElementById('status-dot').className = 'status-dot' + (ok ? '' : ' offline');
@@ -582,21 +645,10 @@ document.getElementById('entry-date').value = new Date().toISOString().slice(0,1
 document.getElementById('sum-month').value = new Date().toISOString().slice(0,7);
 document.getElementById('filter-month').value = new Date().toISOString().slice(0,7);
 
-(async () => {
-  try {
-    await loadSettings();
-    await loadLawyers();
-    await loadCases();
-    await loadEntries();
-    setStatus(true);
-  } catch(e) {
-    setStatus(false);
-    console.error('Firebase error:', e);
-    document.getElementById('cases-list').innerHTML = `<div class="alert alert-info" style="border-color:#f2994a;background:#fff8f0;color:#7a4e1e">Firebase接続エラー。Firestoreデータベースの作成とセキュリティルールを確認してください。</div>`;
-  }
-})();
+
 
 window.addEventListener('keydown', e => { if (e.key==='Escape') closePDF(); });
 </script>
+</div>
 </body>
 </html>
