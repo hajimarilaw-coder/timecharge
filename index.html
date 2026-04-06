@@ -99,7 +99,7 @@ tr:hover td { background: #fafaf8; }
 #pdf-content table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px; }
 #pdf-content th, #pdf-content td { border: 0.5px solid #bbb; padding: 4px 8px; }
 #pdf-content th { background: #f4f4f0; font-weight: 600; }
-#pdf-content .summary-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 16px 0; }
+#pdf-content .summary-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; margin: 16px 0; }
 #pdf-content .summary-box { border: 1px solid #ccc; border-radius: 4px; padding: 10px; text-align: center; }
 #pdf-content .summary-box .val { font-size: 20px; font-weight: 300; color: #2c4a6e; }
 #pdf-content .summary-box .lbl { font-size: 10px; color: #666; margin-bottom: 4px; }
@@ -555,7 +555,7 @@ window.showPDF = function(month, cf, lf, u, r) {
           return `<tr><td>${e.date}</td><td>${l?l.name:'不明'}</td><td>${c?c.name:'不明'}</td><td>${e.category}</td><td style="text-align:right">${e.minutes}</td><td>${e.desc}</td></tr>`;
         }).join('')}
         <tr style="background:#f4f4f4;font-weight:600">
-          <td colspan="5" style="text-align:right">合計</td>
+          <td colspan="4" style="text-align:right">合計</td>
           <td style="text-align:right">${total}分</td>
           <td></td>
         </tr>
