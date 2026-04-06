@@ -657,7 +657,7 @@ window.showPDF = function(month, cf, lf, u, r) {
   const rows = sorted.map(e => {
     const c = cases.find(x=>x.id===e.caseId);
     const l = lawyers.find(x=>x.id===e.lawyerId);
-    return '<tr><td>'+e.date+'</td><td>'+(l?l.name:'不明')+'</td><td>'+(c?c.name:'不明')+'</td><td>'+e.category+'</td><td style="text-align:right">'+e.minutes+'</td><td>'+(e.desc||'')+'</td></tr>';
+    return '<tr><td>'+e.date+'</td><td>'+(l?l.name:'不明')+'</td><td>'+(c?c.name:'不明')+'</td><td>'+e.category+'</td><td style="text-align:right;white-space:nowrap">'+e.minutes+'</td><td>'+(e.desc||'')+'</td></tr>';
   }).join('');
 
   const css = [
@@ -680,7 +680,7 @@ window.showPDF = function(month, cf, lf, u, r) {
     '.tb{margin-top:14px;padding:10px 14px;border:1pt solid #2c4a6e;background:#f0f5fb;font-size:10pt}',
     '.ft{font-size:8pt;color:#999;margin-top:18px;border-top:0.5pt solid #ddd;padding-top:6px}',
     '.pb{position:fixed;top:12px;right:12px;padding:8px 18px;background:#2c4a6e;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11pt}',
-    '@media print{.pb{display:none}body{padding:8px}}'
+    '@media print{.pb{display:none}body{padding:8px}@page{margin:10mm}}'
   ].join('');
 
   const body = [
@@ -710,7 +710,7 @@ window.showPDF = function(month, cf, lf, u, r) {
     '<th style="width:52pt">弁護士</th>',
     '<th style="width:88pt">案件名</th>',
     '<th style="width:60pt">業務区分</th>',
-    '<th style="width:26pt;text-align:right">分数</th>',
+    '<th style="width:36pt;text-align:right;white-space:nowrap">分数</th>',
     '<th>稼働内容</th>',
     '</tr></thead><tbody>',
     rows,
@@ -720,7 +720,7 @@ window.showPDF = function(month, cf, lf, u, r) {
     '<div class="ft">出力日時: '+new Date().toLocaleString('ja-JP')+'</div>'
   ].join('');
 
-  const fullHTML = '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>'+fname+'</title><style>'+css+'</style></head><body>'+body+'</body></html>';
+  const fullHTML = '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title></title><style>'+css+'</style></head><body>'+body+'</body></html>';
 
   const w = window.open('', '_blank', 'width=900,height=700');
   if (w) {
