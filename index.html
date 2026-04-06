@@ -680,7 +680,7 @@ window.showPDF = function(month, cf, lf, u, r) {
     '.tb{margin-top:14px;padding:10px 14px;border:1pt solid #2c4a6e;background:#f0f5fb;font-size:10pt}',
     '.ft{font-size:8pt;color:#999;margin-top:18px;border-top:0.5pt solid #ddd;padding-top:6px}',
     '.pb{position:fixed;top:12px;right:12px;padding:8px 18px;background:#2c4a6e;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11pt}',
-    '@media print{.pb{display:none}body{padding:8px}@page{margin:10mm}}'
+    '@media print{.pb{display:none}body{padding:4px}@page{size:A4;margin:12mm 10mm}}'
   ].join('');
 
   const body = [
@@ -720,7 +720,7 @@ window.showPDF = function(month, cf, lf, u, r) {
     '<div class="ft">出力日時: '+new Date().toLocaleString('ja-JP')+'</div>'
   ].join('');
 
-  const fullHTML = '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title></title><style>'+css+'</style></head><body>'+body+'</body></html>';
+  const fullHTML = '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>'+fname+'</title><style>'+css+'</style></head><body>'+body+'</body></html>';
 
   const w = window.open('', '_blank', 'width=900,height=700');
   if (w) {
