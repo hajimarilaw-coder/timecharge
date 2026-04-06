@@ -92,11 +92,13 @@ tr:hover td { background: #fafaf8; }
 .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text3); font-size: 13px; }
 #pdf-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 200; overflow-y: auto; padding: 40px 20px; }
 #pdf-frame { background: #fff; color: #000; max-width: 760px; margin: 0 auto; padding: 40px 48px; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); font-family: 'Noto Serif JP', 'Noto Sans JP', serif; }
+#pdf-content-wrap { width: 794px; margin: 0 auto; }
 .pdf-actions { display: flex; gap: 10px; justify-content: flex-end; margin: -40px -48px 24px; padding: 12px 48px; background: #fff; border-bottom: 1px solid #ddd; border-radius: var(--radius-lg) var(--radius-lg) 0 0; position: sticky; top: 0; }
-#pdf-content { font-size: 12px; line-height: 1.8; width: 100%; }
-#pdf-content table { table-layout: fixed; word-break: break-all; }
+#pdf-content-wrap { width: 794px; box-sizing: border-box; padding: 0 28px; }
+#pdf-content { font-size: 11.5px; line-height: 1.75; width: 100%; box-sizing: border-box; }
+#pdf-content table { table-layout: fixed; width: 100%; word-break: break-all; }
 #pdf-content td, #pdf-content th { word-break: break-all; overflow-wrap: break-word; }
-#pdf-content h1 { font-size: 18px; margin-bottom: 4px; }
+#pdf-content h1 { font-size: 16px; margin-bottom: 4px; word-break: break-all; }
 #pdf-content h2 { font-size: 14px; margin: 20px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #ccc; }
 #pdf-content table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px; }
 #pdf-content th, #pdf-content td { border: 0.5px solid #bbb; padding: 4px 8px; }
@@ -107,6 +109,10 @@ tr:hover td { background: #fafaf8; }
 #pdf-content .summary-box .lbl { font-size: 10px; color: #666; margin-bottom: 4px; }
 #pdf-content .lawyer-header { background: #e8eef5; padding: 6px 10px; font-weight: 600; margin: 12px 0 6px; font-size: 12px; }
 #toast { position: fixed; bottom: 24px; right: 24px; z-index: 300; display: none; }
+#edit-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:400; align-items:center; justify-content:center; }
+#edit-modal.open { display:flex; }
+#edit-box { background:var(--surface); border-radius:var(--radius-lg); padding:1.5rem; width:100%; max-width:520px; box-shadow:var(--shadow-md); margin:16px; }
+#edit-box h3 { font-family:'Noto Serif JP',serif; font-size:16px; font-weight:600; color:var(--accent); margin-bottom:1rem; padding-bottom:8px; border-bottom:1px solid var(--border); }
 #toast-inner { background: var(--accent); color: #e8eef5; padding: 10px 18px; border-radius: var(--radius); font-size: 13px; box-shadow: var(--shadow-md); }
 @media print {
   #login-screen, #app-screen > *:not(#pdf-overlay) { display: none !important; }
@@ -256,10 +262,36 @@ tr:hover td { background: #fafaf8; }
       <button class="btn btn-sm" onclick="closePDF()">✕ 閉じる</button>
       <button class="btn btn-success btn-sm" onclick="downloadPDF()" id="pdf-dl-btn">⬇ PDFダウンロード</button>
     </div>
-    <div id="pdf-content"></div>
+    <div id="pdf-content-wrap"><div id="pdf-content"></div></div>
   </div>
 </div>
 <div id="toast"><div id="toast-inner"></div></div>
+<div id="edit-modal" onclick="if(event.target===this)closeEditModal()">
+  <div id="edit-box">
+    <h3>稼働記録を編集</h3>
+    <div class="grid2">
+      <div><label>案件 *</label><select id="edit-case"></select></div>
+      <div><label>弁護士 *</label><select id="edit-lawyer"></select></div>
+    </div>
+    <div class="grid3">
+      <div><label>稼働日 *</label><input type="date" id="edit-date"></div>
+      <div><label>稼働時間（分）*</label><input type="number" id="edit-minutes" min="1"></div>
+      <div><label>業務区分</label>
+        <select id="edit-category">
+          <option>相談・打合せ</option><option>書面作成</option><option>調査・分析</option>
+          <option>交渉</option><option>裁判所</option><option>契約書レビュー</option>
+          <option>メール・電話対応</option><option>その他</option>
+        </select>
+      </div>
+    </div>
+    <div><label>稼働内容 *</label><textarea id="edit-desc" style="height:80px"></textarea></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+      <button class="btn btn-sm" onclick="closeEditModal()">キャンセル</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteFromEdit()">削除</button>
+      <button class="btn btn-sm btn-primary" onclick="saveEdit()">保存</button>
+    </div>
+  </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script type="module">
@@ -472,6 +504,57 @@ window.removeEntry = async function(id) {
   await loadEntries(); toast('削除しました');
 };
 
+window.openEditModal = function(id) {
+  const e = entries.find(x => x.id === id);
+  if (!e) return;
+  window._editId = id;
+  // Populate case select
+  const caseOpts = cases.map(c=>`<option value="${c.id}" ${c.id===e.caseId?'selected':''}>${c.name}</option>`).join('');
+  document.getElementById('edit-case').innerHTML = caseOpts;
+  // Populate lawyer select
+  const lawyerOpts = lawyers.map(l=>`<option value="${l.id}" ${l.id===e.lawyerId?'selected':''}>${l.name}</option>`).join('');
+  document.getElementById('edit-lawyer').innerHTML = lawyerOpts;
+  document.getElementById('edit-date').value = e.date;
+  document.getElementById('edit-minutes').value = e.minutes;
+  document.getElementById('edit-category').value = e.category;
+  document.getElementById('edit-desc').value = e.desc;
+  document.getElementById('edit-modal').classList.add('open');
+};
+
+window.closeEditModal = function() {
+  document.getElementById('edit-modal').classList.remove('open');
+  window._editId = null;
+};
+
+window.saveEdit = async function() {
+  const id = window._editId;
+  if (!id) return;
+  const caseId = document.getElementById('edit-case').value;
+  const lawyerId = document.getElementById('edit-lawyer').value;
+  const date = document.getElementById('edit-date').value;
+  const minutes = parseInt(document.getElementById('edit-minutes').value);
+  const desc = document.getElementById('edit-desc').value.trim();
+  if (!caseId || !lawyerId || !date || !minutes || !desc) return alert('必須項目をすべて入力してください');
+  await setDoc(doc(db, 'entries', id), {
+    caseId, lawyerId, date, minutes,
+    category: document.getElementById('edit-category').value,
+    desc, updatedAt: new Date().toISOString()
+  }, { merge: true });
+  closeEditModal();
+  await loadEntries();
+  toast('更新しました');
+};
+
+window.deleteFromEdit = async function() {
+  const id = window._editId;
+  if (!id) return;
+  if (!confirm('この稼働記録を削除しますか？')) return;
+  await deleteDoc(doc(db, 'entries', id));
+  closeEditModal();
+  await loadEntries();
+  toast('削除しました');
+};
+
 window.renderEntries = function() {
   const el = document.getElementById('entries-list');
   let list = [...entries];
@@ -499,6 +582,7 @@ window.renderEntries = function() {
           </div>
           <div style="display:flex;align-items:center;gap:8px;white-space:nowrap">
             <span class="tag">${e.minutes}分</span>
+            <button class="btn btn-sm" onclick="openEditModal('${e.id}')">編集</button>
             <button class="btn btn-sm btn-danger" onclick="removeEntry('${e.id}')">削除</button>
           </div>
         </div>
@@ -618,7 +702,7 @@ window.showPDF = function(month, cf, lf, u, r) {
     </div>
     <h2>稼働明細（日付順）</h2>
     <table>
-      <thead><tr><th style="width:72px">日付</th><th style="width:60px">弁護士</th><th style="width:100px">案件名</th><th style="width:68px">業務区分</th><th style="width:30px;text-align:right">分数</th><th>稼働内容</th></tr></thead>
+      <thead><tr><th style="width:70px">日付</th><th style="width:56px">弁護士</th><th style="width:90px">案件名</th><th style="width:64px">業務区分</th><th style="width:28px;text-align:right">分数</th><th>稼働内容</th></tr></thead>
       <tbody>
         ${sorted.map(e=>{
           const c=cases.find(x=>x.id===e.caseId);
@@ -658,14 +742,15 @@ window.downloadPDF = function() {
   const el = document.getElementById('pdf-content');
   const filename = window._pdfFilename || 'timecharge.pdf';
   const opt = {
-    margin: [12, 8, 12, 8],
+    margin: [10, 0, 10, 0],
     filename: filename,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 794 },
+    html2canvas: { scale: 2, useCORS: true, logging: false, width: 794, windowWidth: 794 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     pagebreak: { mode: ['css', 'legacy'] }
   };
-  html2pdf().set(opt).from(el).save().then(() => {
+  const wrap = document.getElementById('pdf-content-wrap');
+  html2pdf().set(opt).from(wrap).save().then(() => {
     btn.textContent = '⬇ PDFダウンロード';
     btn.disabled = false;
   });
