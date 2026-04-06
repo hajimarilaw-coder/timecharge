@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>タイムチャージ管理システム</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;600&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f7f5f0;
+  --surface: #ffffff;
+  --surface2: #f0ede6;
+  --border: #d8d3c8;
+  --border2: #c8c2b4;
+  --text: #1a1814;
+  --text2: #6b6560;
+  --text3: #9b9590;
+  --accent: #2c4a6e;
+  --accent2: #3d6491;
+  --accent-light: #e8eef5;
+  --danger: #8b2c2c;
+  --danger-light: #fdf0f0;
+  --success: #2c5a3a;
+  --success-light: #eef5f0;
+  --amber: #7a5c1e;
+  --amber-light: #faf3e0;
+  --radius: 6px;
+  --radius-lg: 10px;
+  --shadow: 0 1px 4px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; min-height: 100vh; }
+.topbar { background: var(--accent); color: #e8eef5; padding: 0 2rem; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.topbar-title { font-family: 'Noto Serif JP', serif; font-size: 15px; font-weight: 600; letter-spacing: 0.05em; }
+.topbar-status { font-size: 11px; opacity: 0.7; display: flex; align-items: center; gap: 6px; }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: #6fcf97; }
+.status-dot.offline { background: #f2994a; }
+nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; gap: 0; overflow-x: auto; }
+.nav-btn { padding: 14px 20px; border: none; background: transparent; cursor: pointer; font-size: 13px; font-family: 'Noto Sans JP', sans-serif; color: var(--text2); border-bottom: 2px solid transparent; white-space: nowrap; transition: all .15s; }
+.nav-btn:hover { color: var(--accent); }
+.nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+.main { max-width: 1000px; margin: 0 auto; padding: 2rem 1.5rem; }
+.page { display: none; }
+.page.active { display: block; }
+.page-header { margin-bottom: 1.5rem; }
+.page-header h2 { font-family: 'Noto Serif JP', serif; font-size: 20px; font-weight: 600; }
+.page-header p { color: var(--text2); font-size: 12px; margin-top: 4px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 1rem; box-shadow: var(--shadow); }
+.card h3 { font-size: 12px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+label { font-size: 12px; color: var(--text2); display: block; margin-bottom: 3px; font-weight: 500; }
+input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; font-family: 'Noto Sans JP', sans-serif; background: var(--surface); color: var(--text); margin-bottom: 12px; transition: border-color .15s; -webkit-appearance: none; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(44,74,110,0.08); }
+textarea { height: 88px; resize: vertical; line-height: 1.6; }
+select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239b9590' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.btn { padding: 8px 18px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); cursor: pointer; font-size: 13px; font-family: 'Noto Sans JP', sans-serif; color: var(--text); transition: all .15s; display: inline-flex; align-items: center; gap: 6px; }
+.btn:hover { background: var(--surface2); }
+.btn:active { transform: scale(0.98); }
+.btn-primary { background: var(--accent); color: #e8eef5; border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn-danger { color: var(--danger); border-color: #dbb; }
+.btn-danger:hover { background: var(--danger-light); }
+.btn-success { background: var(--success); color: #eef5f0; border-color: var(--success); }
+.btn-success:hover { background: #3d7a50; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 500; }
+.badge-blue { background: var(--accent-light); color: var(--accent); }
+.badge-green { background: var(--success-light); color: var(--success); }
+.badge-amber { background: var(--amber-light); color: var(--amber); }
+.badge-gray { background: var(--surface2); color: var(--text2); }
+.tag { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 11px; background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text2); font-weight: 500; font-size: 12px; background: var(--surface2); }
+td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafaf8; }
+.metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem; text-align: center; }
+.metric-label { font-size: 11px; color: var(--text2); margin-bottom: 6px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; }
+.metric-value { font-size: 26px; font-weight: 300; font-family: 'Noto Serif JP', serif; color: var(--accent); }
+.metric-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+.filter-row { display: flex; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap; align-items: flex-end; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 12px 16px; }
+.filter-row > div { flex: 1; min-width: 130px; }
+.filter-row label { font-size: 11px; }
+.filter-row input, .filter-row select { margin-bottom: 0; }
+.alert { padding: 10px 14px; border-radius: var(--radius); font-size: 13px; margin-bottom: 12px; border: 1px solid; }
+.alert-info { background: var(--accent-light); color: var(--accent); border-color: #b8cce0; }
+.loading { text-align: center; padding: 3rem; color: var(--text2); font-size: 13px; }
+.spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; margin-right: 8px; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.empty-state { text-align: center; padding: 3rem 1rem; color: var(--text3); font-size: 13px; }
+#pdf-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 200; overflow-y: auto; padding: 40px 20px; }
+#pdf-frame { background: #fff; color: #000; max-width: 760px; margin: 0 auto; padding: 40px 48px; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); font-family: 'Noto Serif JP', 'Noto Sans JP', serif; }
+.pdf-actions { display: flex; gap: 10px; justify-content: flex-end; margin: -40px -48px 24px; padding: 12px 48px; background: #fff; border-bottom: 1px solid #ddd; border-radius: var(--radius-lg) var(--radius-lg) 0 0; position: sticky; top: 0; }
+#pdf-content { font-size: 12px; line-height: 1.8; }
+#pdf-content h1 { font-size: 18px; margin-bottom: 4px; }
+#pdf-content h2 { font-size: 14px; margin: 20px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #ccc; }
+#pdf-content table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px; }
+#pdf-content th, #pdf-content td { border: 0.5px solid #bbb; padding: 4px 8px; }
+#pdf-content th { background: #f4f4f0; font-weight: 600; }
+#pdf-content .summary-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 16px 0; }
+#pdf-content .summary-box { border: 1px solid #ccc; border-radius: 4px; padding: 10px; text-align: center; }
+#pdf-content .summary-box .val { font-size: 20px; font-weight: 300; color: #2c4a6e; }
+#pdf-content .summary-box .lbl { font-size: 10px; color: #666; margin-bottom: 4px; }
+#pdf-content .lawyer-header { background: #e8eef5; padding: 6px 10px; font-weight: 600; margin: 12px 0 6px; font-size: 12px; }
+#toast { position: fixed; bottom: 24px; right: 24px; z-index: 300; display: none; }
+#toast-inner { background: var(--accent); color: #e8eef5; padding: 10px 18px; border-radius: var(--radius); font-size: 13px; box-shadow: var(--shadow-md); }
+@media print {
+  body > *:not(#pdf-overlay) { display: none !important; }
+  #pdf-overlay { display: block !important; position: static; background: none; padding: 0; }
+  #pdf-frame { box-shadow: none; padding: 0; margin: 0; max-width: 100%; border-radius: 0; }
+  .pdf-actions { display: none !important; }
+}
+@media (max-width: 640px) {
+  .main { padding: 1rem; }
+  .grid2, .grid3 { grid-template-columns: 1fr; }
+  .topbar { padding: 0 1rem; }
+  nav { padding: 0 0.5rem; }
+  #pdf-frame { padding: 24px 20px; }
+  .pdf-actions { margin: -24px -20px 16px; padding: 10px 20px; }
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-title">⚖ タイムチャージ管理</div>
+  <div class="topbar-status">
+    <div class="status-dot offline" id="status-dot"></div>
+    <span id="status-text">接続中...</span>
+  </div>
+</div>
+<nav>
+  <button class="nav-btn active" onclick="showPage('cases',this)">案件管理</button>
+  <button class="nav-btn" onclick="showPage('entries',this)">稼働入力</button>
+  <button class="nav-btn" onclick="showPage('summary',this)">集計・PDF出力</button>
+  <button class="nav-btn" onclick="showPage('settings',this)">設定</button>
+</nav>
+<div class="main">
+  <div id="page-cases" class="page active">
+    <div class="page-header"><h2>案件管理</h2><p>案件の登録・管理を行います</p></div>
+    <div class="card">
+      <h3>新規案件登録</h3>
+      <div class="grid2">
+        <div><label>案件名 *</label><input type="text" id="case-name" placeholder="例: 株式会社A 契約交渉"></div>
+        <div><label>案件番号</label><input type="text" id="case-no" placeholder="例: 2025-001"></div>
+      </div>
+      <div class="grid3">
+        <div><label>依頼者名</label><input type="text" id="case-client" placeholder="依頼者名"></div>
+        <div><label>案件種別</label><select id="case-type"><option>契約</option><option>訴訟</option><option>相談</option><option>M&A</option><option>労務</option><option>知財</option><option>その他</option></select></div>
+        <div><label>ステータス</label><select id="case-status"><option>進行中</option><option>完了</option><option>保留</option></select></div>
+      </div>
+      <div><label>案件メモ</label><textarea id="case-memo" placeholder="案件の概要・注意事項など"></textarea></div>
+      <button class="btn btn-primary" onclick="addCase()">案件を登録</button>
+    </div>
+    <div id="cases-list"><div class="loading"><span class="spinner"></span>読み込み中...</div></div>
+  </div>
+
+  <div id="page-entries" class="page">
+    <div class="page-header"><h2>稼働入力</h2><p>案件ごとの稼働時間を記録します</p></div>
+    <div class="card">
+      <h3>稼働記録の追加</h3>
+      <div class="grid2">
+        <div><label>案件 *</label><select id="entry-case"><option value="">案件を選択</option></select></div>
+        <div><label>弁護士 *</label><select id="entry-lawyer"><option value="">選択してください</option></select></div>
+      </div>
+      <div class="grid3">
+        <div><label>稼働日 *</label><input type="date" id="entry-date"></div>
+        <div><label>稼働時間（分）*</label><input type="number" id="entry-minutes" min="1" placeholder="例: 60"></div>
+        <div><label>業務区分</label><select id="entry-category"><option>相談・打合せ</option><option>書面作成</option><option>調査・分析</option><option>交渉</option><option>裁判所</option><option>契約書レビュー</option><option>メール・電話対応</option><option>その他</option></select></div>
+      </div>
+      <div><label>稼働内容 *</label><textarea id="entry-desc" placeholder="稼働内容を詳しく記載してください（依頼者への明細に表示されます）"></textarea></div>
+      <button class="btn btn-primary" onclick="addEntry()">稼働を記録</button>
+    </div>
+    <div class="filter-row">
+      <div><label>案件で絞込</label><select id="filter-case" onchange="renderEntries()"><option value="">全案件</option></select></div>
+      <div><label>弁護士で絞込</label><select id="filter-lawyer" onchange="renderEntries()"><option value="">全弁護士</option></select></div>
+      <div><label>月で絞込</label><input type="month" id="filter-month" onchange="renderEntries()"></div>
+    </div>
+    <div id="entries-list"><div class="loading"><span class="spinner"></span>読み込み中...</div></div>
+  </div>
+
+  <div id="page-summary" class="page">
+    <div class="page-header"><h2>集計・PDF出力</h2><p>月次の稼働明細を集計し、PDF形式で出力します</p></div>
+    <div class="card">
+      <h3>集計条件</h3>
+      <div class="grid3">
+        <div><label>対象月 *</label><input type="month" id="sum-month"></div>
+        <div><label>案件（空白=全案件）</label><select id="sum-case"><option value="">全案件</option></select></div>
+        <div><label>弁護士（空白=全員）</label><select id="sum-lawyer"><option value="">全弁護士</option></select></div>
+      </div>
+      <div class="grid3">
+        <div><label>1単位 = 何分</label><select id="sum-unit"><option value="6">6分（0.1時間）</option><option value="10">10分</option><option value="15">15分</option><option value="30">30分</option><option value="60">60分（1時間）</option></select></div>
+        <div><label>端数処理</label><select id="sum-rounding"><option value="floor">切り捨て</option><option value="ceil">切り上げ</option><option value="round">四捨五入</option></select></div>
+        <div style="display:flex;align-items:flex-end"><button class="btn btn-primary" style="width:100%;margin-bottom:0;justify-content:center" onclick="calcSummary()">集計する</button></div>
+      </div>
+    </div>
+    <div id="summary-result"></div>
+  </div>
+
+  <div id="page-settings" class="page">
+    <div class="page-header"><h2>設定</h2><p>弁護士情報と事務所名称を設定します</p></div>
+    <div class="card">
+      <h3>事務所設定</h3>
+      <div class="grid2">
+        <div><label>事務所名（PDFヘッダーに表示）</label><input type="text" id="office-name" placeholder="例: ○○法律事務所"></div>
+        <div><label>所在地（任意）</label><input type="text" id="office-addr" placeholder="例: 東京都千代田区..."></div>
+      </div>
+      <div class="grid2">
+        <div><label>電話番号（任意）</label><input type="text" id="office-tel" placeholder="例: 03-XXXX-XXXX"></div>
+        <div><label>メールアドレス（任意）</label><input type="text" id="office-email" placeholder="例: info@xxxlaw.jp"></div>
+      </div>
+      <button class="btn btn-primary" onclick="saveOfficeSetting()">保存</button>
+    </div>
+    <div class="card">
+      <h3>弁護士設定</h3>
+      <div class="grid3">
+        <div><label>氏名 *</label><input type="text" id="lawyer-name" placeholder="氏名"></div>
+        <div><label>時間チャージ（円/時間）</label><input type="number" id="lawyer-rate" placeholder="例: 50000"></div>
+        <div style="display:flex;align-items:flex-end"><button class="btn btn-primary" style="width:100%;margin-bottom:0;justify-content:center" onclick="addLawyer()">追加</button></div>
+      </div>
+      <div id="lawyers-list" style="margin-top:1rem"></div>
+    </div>
+  </div>
+</div>
+
+<div id="pdf-overlay" onclick="handleOverlayClick(event)">
+  <div id="pdf-frame">
+    <div class="pdf-actions">
+      <button class="btn btn-sm" onclick="closePDF()">✕ 閉じる</button>
+      <button class="btn btn-success btn-sm" onclick="window.print()">🖨 印刷 / PDF保存</button>
+    </div>
+    <div id="pdf-content"></div>
+  </div>
+</div>
+<div id="toast"><div id="toast-inner"></div></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, doc, addDoc, getDocs, deleteDoc, query, orderBy, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCH-E9kVOVWrB57YZM30B1YeqmoptbtffM",
+  authDomain: "timecharge-b3cd5.firebaseapp.com",
+  projectId: "timecharge-b3cd5",
+  storageBucket: "timecharge-b3cd5.firebasestorage.app",
+  messagingSenderId: "912013568845",
+  appId: "1:912013568845:web:5fe12c6a888c9319aaa504"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+let lawyers = [], cases = [], entries = [], settings = {};
+
+function setStatus(ok) {
+  document.getElementById('status-dot').className = 'status-dot' + (ok ? '' : ' offline');
+  document.getElementById('status-text').textContent = ok ? 'Firebase 接続済' : 'オフライン';
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  document.getElementById('toast-inner').textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 2500);
+}
+
+async function loadSettings() {
+  const snap = await getDoc(doc(db, 'settings', 'office'));
+  if (snap.exists()) {
+    settings = snap.data();
+    document.getElementById('office-name').value = settings.name || '';
+    document.getElementById('office-addr').value = settings.addr || '';
+    document.getElementById('office-tel').value = settings.tel || '';
+    document.getElementById('office-email').value = settings.email || '';
+  }
+}
+
+window.saveOfficeSetting = async function() {
+  settings = {
+    name: document.getElementById('office-name').value.trim(),
+    addr: document.getElementById('office-addr').value.trim(),
+    tel: document.getElementById('office-tel').value.trim(),
+    email: document.getElementById('office-email').value.trim(),
+  };
+  await setDoc(doc(db, 'settings', 'office'), settings);
+  toast('事務所情報を保存しました');
+};
+
+async function loadLawyers() {
+  const snap = await getDocs(collection(db, 'lawyers'));
+  lawyers = [];
+  snap.forEach(d => lawyers.push({ id: d.id, ...d.data() }));
+  renderLawyers(); updateSelects();
+}
+
+window.addLawyer = async function() {
+  const name = document.getElementById('lawyer-name').value.trim();
+  const rate = parseInt(document.getElementById('lawyer-rate').value) || 0;
+  if (!name) return alert('氏名を入力してください');
+  await addDoc(collection(db, 'lawyers'), { name, rate });
+  document.getElementById('lawyer-name').value = '';
+  document.getElementById('lawyer-rate').value = '';
+  await loadLawyers(); toast('弁護士を登録しました');
+};
+
+window.removeLawyer = async function(id) {
+  if (!confirm('削除しますか？')) return;
+  await deleteDoc(doc(db, 'lawyers', id));
+  await loadLawyers(); toast('削除しました');
+};
+
+function renderLawyers() {
+  const el = document.getElementById('lawyers-list');
+  if (!lawyers.length) { el.innerHTML = '<div class="empty-state">弁護士が登録されていません</div>'; return; }
+  el.innerHTML = '<table><thead><tr><th>氏名</th><th>時間チャージ</th><th></th></tr></thead><tbody>' +
+    lawyers.map(l => `<tr><td><strong>${l.name}</strong></td><td>${l.rate ? l.rate.toLocaleString()+'円/時間' : '未設定'}</td><td><button class="btn btn-sm btn-danger" onclick="removeLawyer('${l.id}')">削除</button></td></tr>`).join('') + '</tbody></table>';
+}
+
+async function loadCases() {
+  const snap = await getDocs(query(collection(db, 'cases'), orderBy('createdAt', 'desc')));
+  cases = [];
+  snap.forEach(d => cases.push({ id: d.id, ...d.data() }));
+  renderCases(); updateSelects();
+}
+
+window.addCase = async function() {
+  const name = document.getElementById('case-name').value.trim();
+  if (!name) return alert('案件名を入力してください');
+  await addDoc(collection(db, 'cases'), {
+    name, no: document.getElementById('case-no').value.trim(),
+    client: document.getElementById('case-client').value.trim(),
+    type: document.getElementById('case-type').value,
+    status: document.getElementById('case-status').value,
+    memo: document.getElementById('case-memo').value.trim(),
+    createdAt: new Date().toISOString()
+  });
+  ['case-name','case-no','case-client','case-memo'].forEach(id => document.getElementById(id).value = '');
+  await loadCases(); await loadEntries(); toast('案件を登録しました');
+};
+
+window.removeCase = async function(id) {
+  if (!confirm('この案件を削除しますか？')) return;
+  await deleteDoc(doc(db, 'cases', id));
+  await loadCases(); toast('削除しました');
+};
+
+function renderCases() {
+  const el = document.getElementById('cases-list');
+  if (!cases.length) { el.innerHTML = '<div class="empty-state">案件が登録されていません</div>'; return; }
+  el.innerHTML = cases.map(c => {
+    const cnt = entries.filter(e => e.caseId === c.id).length;
+    const mins = entries.filter(e => e.caseId === c.id).reduce((a,e) => a+e.minutes, 0);
+    const sc = c.status === '進行中' ? 'badge-green' : c.status === '完了' ? 'badge-blue' : 'badge-amber';
+    return `<div class="card" style="margin-bottom:8px;padding:1rem 1.25rem">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-weight:500;font-size:15px;margin-bottom:4px">${c.name}</div>
+          <div style="font-size:12px;color:var(--text2)">
+            ${c.no?'<span class="tag">'+c.no+'</span> ':''}${c.client?c.client+'　':''}
+            <span class="badge badge-blue">${c.type}</span>
+            <span class="badge ${sc}">${c.status}</span>
+          </div>
+          ${c.memo?`<div style="font-size:12px;color:var(--text2);margin-top:5px">${c.memo}</div>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="tag">${cnt}件 / ${Math.floor(mins/60)}h${mins%60}m</span>
+          <button class="btn btn-sm btn-danger" onclick="removeCase('${c.id}')">削除</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadEntries() {
+  const snap = await getDocs(query(collection(db, 'entries'), orderBy('date', 'desc')));
+  entries = [];
+  snap.forEach(d => entries.push({ id: d.id, ...d.data() }));
+  renderEntries(); renderCases();
+}
+
+window.addEntry = async function() {
+  const caseId = document.getElementById('entry-case').value;
+  const lawyerId = document.getElementById('entry-lawyer').value;
+  const date = document.getElementById('entry-date').value;
+  const minutes = parseInt(document.getElementById('entry-minutes').value);
+  const desc = document.getElementById('entry-desc').value.trim();
+  if (!caseId || !lawyerId || !date || !minutes || !desc) return alert('必須項目（*）をすべて入力してください');
+  await addDoc(collection(db, 'entries'), {
+    caseId, lawyerId, date, minutes,
+    category: document.getElementById('entry-category').value,
+    desc, createdAt: new Date().toISOString()
+  });
+  document.getElementById('entry-minutes').value = '';
+  document.getElementById('entry-desc').value = '';
+  await loadEntries(); toast('稼働を記録しました');
+};
+
+window.removeEntry = async function(id) {
+  if (!confirm('この稼働記録を削除しますか？')) return;
+  await deleteDoc(doc(db, 'entries', id));
+  await loadEntries(); toast('削除しました');
+};
+
+window.renderEntries = function() {
+  const el = document.getElementById('entries-list');
+  let list = [...entries];
+  const fc = document.getElementById('filter-case')?.value;
+  const fl = document.getElementById('filter-lawyer')?.value;
+  const fm = document.getElementById('filter-month')?.value;
+  if (fc) list = list.filter(e => e.caseId === fc);
+  if (fl) list = list.filter(e => e.lawyerId === fl);
+  if (fm) list = list.filter(e => e.date.startsWith(fm));
+  if (!list.length) { el.innerHTML = '<div class="empty-state">稼働記録がありません</div>'; return; }
+  const total = list.reduce((a,e) => a+e.minutes, 0);
+  el.innerHTML = `<div style="font-size:12px;color:var(--text2);margin-bottom:8px;padding:0 4px">${list.length}件 ／ 合計 ${Math.floor(total/60)}時間${total%60}分</div>` +
+    list.map(e => {
+      const c = cases.find(x => x.id === e.caseId);
+      const l = lawyers.find(x => x.id === e.lawyerId);
+      return `<div class="card" style="margin-bottom:6px;padding:10px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:500;margin-bottom:3px">
+              ${e.date} <span style="color:var(--text2);font-weight:400">／ ${l?l.name:'不明'}</span>
+              <span class="badge badge-gray" style="margin-left:4px">${e.category}</span>
+            </div>
+            <div style="font-size:12px;color:var(--accent);margin-bottom:4px">${c?c.name:'不明'}</div>
+            <div style="font-size:13px">${e.desc}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;white-space:nowrap">
+            <span class="tag">${e.minutes}分</span>
+            <button class="btn btn-sm btn-danger" onclick="removeEntry('${e.id}')">削除</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+};
+
+function updateSelects() {
+  const co = '<option value="">全案件</option>' + cases.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  const cor = '<option value="">案件を選択</option>' + cases.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  ['filter-case','sum-case'].forEach(id => { const el=document.getElementById(id); if(el){const v=el.value;el.innerHTML=co;el.value=v;} });
+  document.getElementById('entry-case').innerHTML = cor;
+  const lo = '<option value="">全弁護士</option>' + lawyers.map(l=>`<option value="${l.id}">${l.name}</option>`).join('');
+  const lor = '<option value="">選択してください</option>' + lawyers.map(l=>`<option value="${l.id}">${l.name}</option>`).join('');
+  ['filter-lawyer','sum-lawyer'].forEach(id => { const el=document.getElementById(id); if(el){const v=el.value;el.innerHTML=lo;el.value=v;} });
+  document.getElementById('entry-lawyer').innerHTML = lor;
+}
+
+function calcUnits(mins, u, r) {
+  if (r==='floor') return Math.floor(mins/u);
+  if (r==='ceil') return Math.ceil(mins/u);
+  return Math.round(mins/u);
+}
+
+window.calcSummary = function() {
+  const month = document.getElementById('sum-month').value;
+  if (!month) return alert('対象月を選択してください');
+  const cf = document.getElementById('sum-case').value;
+  const lf = document.getElementById('sum-lawyer').value;
+  const u = parseInt(document.getElementById('sum-unit').value);
+  const r = document.getElementById('sum-rounding').value;
+  const rl = {floor:'切り捨て',ceil:'切り上げ',round:'四捨五入'}[r];
+
+  let list = entries.filter(e => e.date.startsWith(month));
+  if (cf) list = list.filter(e => e.caseId === cf);
+  if (lf) list = list.filter(e => e.lawyerId === lf);
+
+  if (!list.length) { document.getElementById('summary-result').innerHTML='<div class="alert alert-info">対象期間の稼働記録がありません</div>'; return; }
+
+  const total = list.reduce((a,e)=>a+e.minutes,0);
+  const totalU = calcUnits(total, u, r);
+  const [y,m] = month.split('-');
+
+  const bl = {}; lawyers.forEach(l=>{bl[l.id]={...l,mins:0,entries:[]}});
+  list.forEach(e=>{if(!bl[e.lawyerId])bl[e.lawyerId]={name:'不明',rate:0,mins:0,entries:[]};bl[e.lawyerId].mins+=e.minutes;bl[e.lawyerId].entries.push(e);});
+
+  const bc = {}; cases.forEach(c=>{bc[c.id]={...c,mins:0,entries:[]}});
+  list.forEach(e=>{if(!bc[e.caseId])bc[e.caseId]={name:'不明',client:'',mins:0,entries:[]};bc[e.caseId].mins+=e.minutes;bc[e.caseId].entries.push(e);});
+
+  document.getElementById('summary-result').innerHTML = `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:1rem">
+      <div>
+        <div style="font-size:16px;font-weight:500;font-family:'Noto Serif JP',serif">${y}年${parseInt(m)}月 集計結果</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">単位設定: ${u}分 = 1単位（${rl}）</div>
+      </div>
+      <button class="btn btn-success" onclick="showPDF('${month}','${cf}','${lf}',${u},'${r}')">🖨 稼働明細 PDF出力</button>
+    </div>
+    <div class="grid3" style="margin-bottom:1rem">
+      <div class="metric"><div class="metric-label">総稼働時間</div><div class="metric-value">${Math.floor(total/60)}<span style="font-size:14px">h</span>${total%60}<span style="font-size:14px">m</span></div><div class="metric-sub">${total}分</div></div>
+      <div class="metric"><div class="metric-label">総稼働単位</div><div class="metric-value">${totalU}<span style="font-size:14px">単位</span></div><div class="metric-sub">${u}分×1・${rl}</div></div>
+      <div class="metric"><div class="metric-label">稼働件数</div><div class="metric-value">${list.length}<span style="font-size:14px">件</span></div><div class="metric-sub">${Object.values(bl).filter(l=>l.mins>0).length}名が稼働</div></div>
+    </div>
+    <h3>弁護士別集計</h3>
+    <table style="margin-bottom:1rem"><thead><tr><th>弁護士</th><th>稼働時間</th><th>単位数</th><th>稼働件数</th><th>推計報酬（税抜）</th></tr></thead><tbody>
+      ${Object.values(bl).filter(l=>l.mins>0).map(l=>{
+        const units=calcUnits(l.mins,u,r);const fee=l.rate?Math.round(l.mins/60*l.rate):null;
+        return `<tr><td><strong>${l.name}</strong></td><td>${Math.floor(l.mins/60)}h${l.mins%60}m</td><td><strong>${units}</strong> 単位</td><td>${l.entries.length}件</td><td>${fee!==null?fee.toLocaleString()+'円':'—'}</td></tr>`;
+      }).join('')}
+    </tbody></table>
+    <h3>案件別集計</h3>
+    <table><thead><tr><th>案件名</th><th>依頼者</th><th>稼働時間</th><th>単位数</th></tr></thead><tbody>
+      ${Object.values(bc).filter(c=>c.mins>0).map(c=>{
+        const units=calcUnits(c.mins,u,r);
+        return `<tr><td><strong>${c.name}</strong></td><td>${c.client||'—'}</td><td>${Math.floor(c.mins/60)}h${c.mins%60}m</td><td><strong>${units}</strong> 単位</td></tr>`;
+      }).join('')}
+    </tbody></table>
+  </div>`;
+};
+
+window.showPDF = function(month, cf, lf, u, r) {
+  let list = entries.filter(e=>e.date.startsWith(month));
+  if (cf) list = list.filter(e=>e.caseId===cf);
+  if (lf) list = list.filter(e=>e.lawyerId===lf);
+  list.sort((a,b)=>a.date.localeCompare(b.date));
+
+  const total = list.reduce((a,e)=>a+e.minutes,0);
+  const totalU = calcUnits(total,u,r);
+  const rl = {floor:'切り捨て',ceil:'切り上げ',round:'四捨五入'}[r];
+  const [y,m] = month.split('-');
+  const caseObj = cf ? cases.find(c=>c.id===cf) : null;
+
+  const bl = {}; lawyers.forEach(l=>{bl[l.id]={...l,mins:0,entries:[]}});
+  list.forEach(e=>{if(!bl[e.lawyerId])bl[e.lawyerId]={name:'不明',rate:0,mins:0,entries:[]};bl[e.lawyerId].mins+=e.minutes;bl[e.lawyerId].entries.push(e);});
+  const bc = {}; cases.forEach(c=>{bc[c.id]={...c,mins:0,entries:[]}});
+  list.forEach(e=>{if(!bc[e.caseId])bc[e.caseId]={name:'不明',client:'',mins:0,entries:[]};bc[e.caseId].mins+=e.minutes;bc[e.caseId].entries.push(e);});
+
+  document.getElementById('pdf-content').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #2c4a6e;padding-bottom:12px;margin-bottom:16px">
+      <div>
+        <h1>${settings.name||'法律事務所'}</h1>
+        ${settings.addr?`<div style="font-size:11px;color:#555">${settings.addr}</div>`:''}
+        ${settings.tel?`<div style="font-size:11px;color:#555">Tel: ${settings.tel}</div>`:''}
+        ${settings.email?`<div style="font-size:11px;color:#555">${settings.email}</div>`:''}
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:14px;font-weight:600;color:#2c4a6e">稼働時間明細書</div>
+        <div style="font-size:11px;color:#555">対象月: ${y}年${parseInt(m)}月</div>
+        ${caseObj?`<div style="font-size:11px;color:#555">案件: ${caseObj.name}</div>`:''}
+        <div style="font-size:10px;color:#888;margin-top:4px">出力日: ${new Date().toLocaleDateString('ja-JP')}</div>
+      </div>
+    </div>
+    <div class="summary-grid">
+      <div class="summary-box"><div class="lbl">総稼働時間</div><div class="val">${Math.floor(total/60)}h${total%60}m</div><div style="font-size:10px;color:#888">${total}分</div></div>
+      <div class="summary-box"><div class="lbl">総稼働単位（${u}分×1）</div><div class="val">${totalU}</div><div style="font-size:10px;color:#888">${rl}</div></div>
+      <div class="summary-box"><div class="lbl">稼働件数</div><div class="val">${list.length}</div><div style="font-size:10px;color:#888">件</div></div>
+    </div>
+    <h2>弁護士別サマリー</h2>
+    <table><thead><tr><th>弁護士</th><th>稼働時間</th><th>単位数</th><th>件数</th><th>推計報酬（税抜）</th></tr></thead><tbody>
+      ${Object.values(bl).filter(l=>l.mins>0).map(l=>{
+        const units=calcUnits(l.mins,u,r);const fee=l.rate?Math.round(l.mins/60*l.rate):null;
+        return `<tr><td><strong>${l.name}</strong></td><td>${Math.floor(l.mins/60)}時間${l.mins%60}分</td><td><strong>${units}単位</strong></td><td>${l.entries.length}件</td><td>${fee!==null?fee.toLocaleString()+'円':'—'}</td></tr>`;
+      }).join('')}
+    </tbody></table>
+    <h2>弁護士別稼働明細</h2>
+    ${Object.values(bl).filter(l=>l.mins>0).map(l=>{
+      const units=calcUnits(l.mins,u,r);
+      return `<div class="lawyer-header">◆ ${l.name}　${Math.floor(l.mins/60)}時間${l.mins%60}分 → ${units}単位</div>
+      <table><thead><tr><th style="width:88px">日付</th><th>案件名</th><th style="width:90px">業務区分</th><th style="width:46px">分数</th><th>稼働内容</th></tr></thead><tbody>
+        ${l.entries.sort((a,b)=>a.date.localeCompare(b.date)).map(e=>{
+          const c=cases.find(x=>x.id===e.caseId);
+          return `<tr><td>${e.date}</td><td>${c?c.name:'不明'}</td><td>${e.category}</td><td style="text-align:right">${e.minutes}</td><td>${e.desc}</td></tr>`;
+        }).join('')}
+      </tbody></table>`;
+    }).join('')}
+    <h2>案件別稼働明細</h2>
+    ${Object.values(bc).filter(c=>c.mins>0).map(c=>{
+      const units=calcUnits(c.mins,u,r);
+      return `<div class="lawyer-header">◆ ${c.name}${c.client?' ／ '+c.client:''}　${Math.floor(c.mins/60)}時間${c.mins%60}分 → ${units}単位</div>
+      <table><thead><tr><th style="width:88px">日付</th><th style="width:80px">弁護士</th><th style="width:90px">業務区分</th><th style="width:46px">分数</th><th>稼働内容</th></tr></thead><tbody>
+        ${c.entries.sort((a,b)=>a.date.localeCompare(b.date)).map(e=>{
+          const l=lawyers.find(x=>x.id===e.lawyerId);
+          return `<tr><td>${e.date}</td><td>${l?l.name:'不明'}</td><td>${e.category}</td><td style="text-align:right">${e.minutes}</td><td>${e.desc}</td></tr>`;
+        }).join('')}
+      </tbody></table>`;
+    }).join('')}
+    <p style="font-size:10px;color:#999;margin-top:20px;border-top:1px solid #eee;padding-top:8px">出力日時: ${new Date().toLocaleString('ja-JP')}</p>
+  `;
+  document.getElementById('pdf-overlay').style.display = 'block';
+};
+
+window.closePDF = () => document.getElementById('pdf-overlay').style.display = 'none';
+window.handleOverlayClick = e => { if (e.target===document.getElementById('pdf-overlay')) closePDF(); };
+window.showPage = (p, btn) => {
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  btn.classList.add('active');
+};
+
+document.getElementById('entry-date').value = new Date().toISOString().slice(0,10);
+document.getElementById('sum-month').value = new Date().toISOString().slice(0,7);
+document.getElementById('filter-month').value = new Date().toISOString().slice(0,7);
+
+(async () => {
+  try {
+    await loadSettings();
+    await loadLawyers();
+    await loadCases();
+    await loadEntries();
+    setStatus(true);
+  } catch(e) {
+    setStatus(false);
+    console.error('Firebase error:', e);
+    document.getElementById('cases-list').innerHTML = `<div class="alert alert-info" style="border-color:#f2994a;background:#fff8f0;color:#7a4e1e">Firebase接続エラー。Firestoreデータベースの作成とセキュリティルールを確認してください。</div>`;
+  }
+})();
+
+window.addEventListener('keydown', e => { if (e.key==='Escape') closePDF(); });
+</script>
+</body>
+</html>
