@@ -90,36 +90,15 @@ tr:hover td { background: #fafaf8; }
 .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; margin-right: 8px; vertical-align: middle; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text3); font-size: 13px; }
-#pdf-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 200; overflow-y: auto; padding: 40px 20px; }
-#pdf-frame { background: #fff; color: #000; max-width: 760px; margin: 0 auto; padding: 40px 48px; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); font-family: 'Noto Serif JP', 'Noto Sans JP', serif; }
-#pdf-content-wrap { width: 794px; margin: 0 auto; }
-.pdf-actions { display: flex; gap: 10px; justify-content: flex-end; margin: -40px -48px 24px; padding: 12px 48px; background: #fff; border-bottom: 1px solid #ddd; border-radius: var(--radius-lg) var(--radius-lg) 0 0; position: sticky; top: 0; }
-#pdf-content-wrap { width: 794px; box-sizing: border-box; padding: 0 28px; }
-#pdf-content { font-size: 11.5px; line-height: 1.75; width: 100%; box-sizing: border-box; }
-#pdf-content table { table-layout: fixed; width: 100%; word-break: break-all; }
-#pdf-content td, #pdf-content th { word-break: break-all; overflow-wrap: break-word; }
-#pdf-content h1 { font-size: 16px; margin-bottom: 4px; word-break: break-all; }
-#pdf-content h2 { font-size: 14px; margin: 20px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #ccc; }
-#pdf-content table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px; }
-#pdf-content th, #pdf-content td { border: 0.5px solid #bbb; padding: 4px 8px; }
-#pdf-content th { background: #f4f4f0; font-weight: 600; }
-#pdf-content .summary-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; margin: 16px 0; }
-#pdf-content .summary-box { border: 1px solid #ccc; border-radius: 4px; padding: 10px; text-align: center; }
-#pdf-content .summary-box .val { font-size: 20px; font-weight: 300; color: #2c4a6e; }
-#pdf-content .summary-box .lbl { font-size: 10px; color: #666; margin-bottom: 4px; }
-#pdf-content .lawyer-header { background: #e8eef5; padding: 6px 10px; font-weight: 600; margin: 12px 0 6px; font-size: 12px; }
+/* pdf-overlay/frame CSS removed */
+/* PDF CSS moved to print window */
 #toast { position: fixed; bottom: 24px; right: 24px; z-index: 300; display: none; }
 #edit-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:400; align-items:center; justify-content:center; }
 #edit-modal.open { display:flex; }
 #edit-box { background:var(--surface); border-radius:var(--radius-lg); padding:1.5rem; width:100%; max-width:520px; box-shadow:var(--shadow-md); margin:16px; }
 #edit-box h3 { font-family:'Noto Serif JP',serif; font-size:16px; font-weight:600; color:var(--accent); margin-bottom:1rem; padding-bottom:8px; border-bottom:1px solid var(--border); }
 #toast-inner { background: var(--accent); color: #e8eef5; padding: 10px 18px; border-radius: var(--radius); font-size: 13px; box-shadow: var(--shadow-md); }
-@media print {
-  #login-screen, #app-screen > *:not(#pdf-overlay) { display: none !important; }
-  #pdf-overlay { display: block !important; position: static; background: none; padding: 0; overflow: visible; }
-  #pdf-frame { box-shadow: none; padding: 0; margin: 0; max-width: 100%; border-radius: 0; }
-  .pdf-actions { display: none !important; }
-}
+/* @media print handled in PDF window */
 @media (max-width: 640px) {
   .main { padding: 1rem; }
   .grid2, .grid3 { grid-template-columns: 1fr; }
@@ -256,15 +235,7 @@ tr:hover td { background: #fafaf8; }
   </div>
 </div>
 
-<div id="pdf-overlay" onclick="handleOverlayClick(event)">
-  <div id="pdf-frame">
-    <div class="pdf-actions">
-      <button class="btn btn-sm" onclick="closePDF()">✕ 閉じる</button>
-      <button class="btn btn-success btn-sm" onclick="downloadPDF()" id="pdf-dl-btn">⬇ PDFダウンロード</button>
-    </div>
-    <div id="pdf-content-wrap"><div id="pdf-content"></div></div>
-  </div>
-</div>
+<!-- pdf-overlay removed: now using printPDF() new window approach -->
 <div id="toast"><div id="toast-inner"></div></div>
 <div id="edit-modal" onclick="if(event.target===this)closeEditModal()">
   <div id="edit-box">
@@ -293,7 +264,6 @@ tr:hover td { background: #fafaf8; }
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, getDocs, deleteDoc, query, orderBy, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -636,7 +606,7 @@ window.calcSummary = function() {
         <div style="font-size:16px;font-weight:500;font-family:'Noto Serif JP',serif">${y}年${parseInt(m)}月 集計結果</div>
         <div style="font-size:12px;color:var(--text2);margin-top:2px">単位設定: ${u}分 = 1単位（${rl}・月合計で1回のみ適用）</div>
       </div>
-      <button class="btn btn-success" onclick="showPDF('${month}','${cf}','${lf}',${u},'${r}')">🖨 稼働明細 PDF出力</button>
+      <button class="btn btn-success" onclick="showPDF('${month}','${cf}','${lf}',${u},'${r}')">🖨 稼働明細をPDF出力</button>
     </div>
     <div class="grid2" style="margin-bottom:1rem">
       <div class="metric"><div class="metric-label">総稼働時間</div><div class="metric-value">${Math.floor(total/60)}<span style="font-size:14px">h</span>${total%60}<span style="font-size:14px">m</span></div><div class="metric-sub">${total}分</div></div>
@@ -669,93 +639,108 @@ window.showPDF = function(month, cf, lf, u, r) {
   if (cf) list = list.filter(e=>e.caseId===cf);
   if (lf) list = list.filter(e=>e.lawyerId===lf);
 
-  // 月合計に対して1回だけ端数処理
   const total = list.reduce((a,e)=>a+e.minutes,0);
   const totalU = calcUnits(total,u,r);
   const rl = {floor:'切り捨て',ceil:'切り上げ',round:'四捨五入'}[r];
   const [y,m] = month.split('-');
   const caseObj = cf ? cases.find(c=>c.id===cf) : null;
   const lawyerObj = lf ? lawyers.find(l=>l.id===lf) : null;
-
-  // 日付順ソート
   const sorted = [...list].sort((a,b)=>a.date.localeCompare(b.date)||a.lawyerId.localeCompare(b.lawyerId));
 
-  document.getElementById('pdf-content').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #2c4a6e;padding-bottom:12px;margin-bottom:16px">
-      <div>
-        <h1>${settings.name||'法律事務所'}</h1>
-        ${settings.addr?`<div style="font-size:11px;color:#555">${settings.addr}</div>`:''}
-        ${settings.tel?`<div style="font-size:11px;color:#555">Tel: ${settings.tel}</div>`:''}
-        ${settings.email?`<div style="font-size:11px;color:#555">${settings.email}</div>`:''}
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:14px;font-weight:600;color:#2c4a6e">稼働時間明細書</div>
-        <div style="font-size:11px;color:#555">対象月: ${y}年${parseInt(m)}月</div>
-        ${caseObj?`<div style="font-size:11px;color:#555">案件: ${caseObj.name}</div>`:''}
-        ${lawyerObj?`<div style="font-size:11px;color:#555">担当: ${lawyerObj.name}</div>`:''}
-        <div style="font-size:10px;color:#888;margin-top:4px">出力日: ${new Date().toLocaleDateString('ja-JP')}</div>
-      </div>
-    </div>
-    <div class="summary-grid">
-      <div class="summary-box"><div class="lbl">総稼働時間</div><div class="val">${Math.floor(total/60)}h${total%60}m</div><div style="font-size:10px;color:#888">${total}分</div></div>
-      <div class="summary-box"><div class="lbl">総稼働単位（${u}分×1・${rl}）</div><div class="val">${totalU}</div><div style="font-size:10px;color:#888">月合計に1回のみ適用</div></div>
-    </div>
-    <h2>稼働明細（日付順）</h2>
-    <table>
-      <thead><tr><th style="width:70px">日付</th><th style="width:56px">弁護士</th><th style="width:90px">案件名</th><th style="width:64px">業務区分</th><th style="width:28px;text-align:right">分数</th><th>稼働内容</th></tr></thead>
-      <tbody>
-        ${sorted.map(e=>{
-          const c=cases.find(x=>x.id===e.caseId);
-          const l=lawyers.find(x=>x.id===e.lawyerId);
-          return `<tr><td>${e.date}</td><td>${l?l.name:'不明'}</td><td>${c?c.name:'不明'}</td><td>${e.category}</td><td style="text-align:right">${e.minutes}</td><td>${e.desc}</td></tr>`;
-        }).join('')}
-        <tr style="background:#f4f4f4;font-weight:600">
-          <td colspan="4" style="text-align:right">合計</td>
-          <td style="text-align:right">${total}分</td>
-          <td></td>
-        </tr>
-      </tbody>
-    </table>
-    <div style="margin-top:16px;padding:12px 16px;border:1px solid #2c4a6e;background:#f0f5fb">
-      <span style="font-size:12px">全弁護士合計稼働時間：<strong>${Math.floor(total/60)}時間${total%60}分（${total}分）</strong>　→　稼働単位：<strong style="font-size:16px">${totalU} 単位</strong>　（1単位=${u}分・${rl}）</span>
-    </div>
-    <p style="font-size:10px;color:#999;margin-top:20px;border-top:1px solid #eee;padding-top:8px">出力日時: ${new Date().toLocaleString('ja-JP')}</p>
-  `;
-  // ファイル名: YYYYMM_依頼者名様.pdf
   const clientName = caseObj ? (caseObj.client || caseObj.name) : '全案件';
-  const today = new Date();
-  const yy = String(today.getFullYear()).slice(2);
-  const mm = String(today.getMonth()+1).padStart(2,'0');
-  const dd = String(today.getDate()).padStart(2,'0');
-  const monthStr = yy + mm + dd;
-  window._pdfFilename = monthStr + '_' + clientName + '様_稼働明細（' + y + '年' + parseInt(m) + '月分）.pdf';
+  const now = new Date();
+  const yy = String(now.getFullYear()).slice(2);
+  const mm2 = String(now.getMonth()+1).padStart(2,'0');
+  const dd = String(now.getDate()).padStart(2,'0');
+  const fname = yy+mm2+dd+'_'+clientName+'様_稼働明細（'+y+'年'+parseInt(m)+'月分）';
 
-  document.getElementById('pdf-overlay').style.display = 'block';
+  const rows = sorted.map(e => {
+    const c = cases.find(x=>x.id===e.caseId);
+    const l = lawyers.find(x=>x.id===e.lawyerId);
+    return '<tr><td>'+e.date+'</td><td>'+(l?l.name:'不明')+'</td><td>'+(c?c.name:'不明')+'</td><td>'+e.category+'</td><td style="text-align:right">'+e.minutes+'</td><td>'+(e.desc||'')+'</td></tr>';
+  }).join('');
+
+  const css = [
+    '*{box-sizing:border-box;margin:0;padding:0}',
+    'body{font-family:"Noto Serif JP","Noto Sans JP",serif;font-size:11pt;color:#000;background:#fff;padding:20px 24px}',
+    'h1{font-size:16pt;margin-bottom:4px}',
+    'h2{font-size:12pt;border-bottom:1px solid #999;padding-bottom:3px;margin:16px 0 8px}',
+    '.hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2pt solid #2c4a6e;padding-bottom:10px;margin-bottom:14px}',
+    '.hdr-r{text-align:right}',
+    '.sub{font-size:9pt;color:#555;margin-top:2px}',
+    '.smry{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}',
+    '.sb{border:1px solid #ccc;border-radius:4px;padding:8px;text-align:center}',
+    '.sb .lb{font-size:8pt;color:#666;margin-bottom:3px}',
+    '.sb .vl{font-size:18pt;font-weight:400;color:#2c4a6e}',
+    '.sb .s2{font-size:8pt;color:#888;margin-top:2px}',
+    'table{width:100%;border-collapse:collapse;font-size:9pt;table-layout:fixed}',
+    'th{background:#f0f0ec;border:0.5pt solid #aaa;padding:4px 6px;text-align:left;font-weight:600;word-break:break-all}',
+    'td{border:0.5pt solid #bbb;padding:4px 6px;word-break:break-all;overflow-wrap:break-word}',
+    '.tr{background:#f4f4f4;font-weight:600}',
+    '.tb{margin-top:14px;padding:10px 14px;border:1pt solid #2c4a6e;background:#f0f5fb;font-size:10pt}',
+    '.ft{font-size:8pt;color:#999;margin-top:18px;border-top:0.5pt solid #ddd;padding-top:6px}',
+    '.pb{position:fixed;top:12px;right:12px;padding:8px 18px;background:#2c4a6e;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11pt}',
+    '@media print{.pb{display:none}body{padding:8px}}'
+  ].join('');
+
+  const body = [
+    '<button class="pb" onclick="window.print()">🖨 印刷 / PDF保存</button>',
+    '<div class="hdr">',
+    '<div>',
+    '<h1>'+(settings.name||'法律事務所')+'</h1>',
+    (settings.addr?'<div class="sub">'+settings.addr+'</div>':''),
+    (settings.tel?'<div class="sub">Tel: '+settings.tel+'</div>':''),
+    (settings.email?'<div class="sub">'+settings.email+'</div>':''),
+    '</div>',
+    '<div class="hdr-r">',
+    '<div style="font-size:14pt;font-weight:600;color:#2c4a6e">稼働時間明細書</div>',
+    '<div class="sub">対象月: '+y+'年'+parseInt(m)+'月</div>',
+    (caseObj?'<div class="sub">案件: '+caseObj.name+'</div>':''),
+    (caseObj&&caseObj.client?'<div class="sub">依頼者: '+caseObj.client+'</div>':''),
+    (lawyerObj?'<div class="sub">担当: '+lawyerObj.name+'</div>':''),
+    '<div class="sub">出力日: '+new Date().toLocaleDateString('ja-JP')+'</div>',
+    '</div></div>',
+    '<div class="smry">',
+    '<div class="sb"><div class="lb">総稼働時間</div><div class="vl">'+Math.floor(total/60)+'h'+total%60+'m</div><div class="s2">'+total+'分</div></div>',
+    '<div class="sb"><div class="lb">総稼働単位（'+u+'分×1・'+rl+'）</div><div class="vl">'+totalU+'</div><div class="s2">月合計に1回のみ適用</div></div>',
+    '</div>',
+    '<h2>稼働明細（日付順）</h2>',
+    '<table><thead><tr>',
+    '<th style="width:74pt">日付</th>',
+    '<th style="width:52pt">弁護士</th>',
+    '<th style="width:88pt">案件名</th>',
+    '<th style="width:60pt">業務区分</th>',
+    '<th style="width:26pt;text-align:right">分数</th>',
+    '<th>稼働内容</th>',
+    '</tr></thead><tbody>',
+    rows,
+    '<tr class="tr"><td colspan="4" style="text-align:right">合計</td><td style="text-align:right">'+total+'分</td><td></td></tr>',
+    '</tbody></table>',
+    '<div class="tb">全弁護士合計稼働時間：<strong>'+Math.floor(total/60)+'時間'+total%60+'分（'+total+'分）</strong>　→　稼働単位：<strong style="font-size:14pt">'+totalU+' 単位</strong>　（1単位='+u+'分・'+rl+'）</div>',
+    '<div class="ft">出力日時: '+new Date().toLocaleString('ja-JP')+'</div>'
+  ].join('');
+
+  const fullHTML = '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>'+fname+'</title><style>'+css+'</style></head><body>'+body+'</body></html>';
+
+  const w = window.open('', '_blank', 'width=900,height=700');
+  if (w) {
+    w.document.write(fullHTML);
+    w.document.close();
+  } else {
+    // ポップアップブロック時はdata: URL でリンクを開く
+    const blob = new Blob([fullHTML], {type: 'text/html;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.download = fname + '.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    toast('ダウンロードしたHTMLファイルをブラウザで開いて印刷してください');
+  }
 };
-
-window.closePDF = () => document.getElementById('pdf-overlay').style.display = 'none';
-
-window.downloadPDF = function() {
-  const btn = document.getElementById('pdf-dl-btn');
-  btn.textContent = '生成中...';
-  btn.disabled = true;
-  const el = document.getElementById('pdf-content');
-  const filename = window._pdfFilename || 'timecharge.pdf';
-  const opt = {
-    margin: [10, 0, 10, 0],
-    filename: filename,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, logging: false, width: 794, windowWidth: 794 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['css', 'legacy'] }
-  };
-  const wrap = document.getElementById('pdf-content-wrap');
-  html2pdf().set(opt).from(wrap).save().then(() => {
-    btn.textContent = '⬇ PDFダウンロード';
-    btn.disabled = false;
-  });
-};
-window.handleOverlayClick = e => { if (e.target===document.getElementById('pdf-overlay')) closePDF(); };
 window.showPage = (p, btn) => {
   document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
